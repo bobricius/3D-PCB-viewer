@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="sk"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Gerber 3D prehliadač</title>
+<style>
+:root{--bg:#e9ecf0;--p:rgba(255,255,255,.92);--t:#1b2330;--m:#5b6676;--a:#0b8a5a;--b:rgba(0,0,0,.15);--c1:#d6dae0;--c2:#e6e9ee;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14171c;--p:rgba(24,28,34,.9);--t:#e8ecf1;--m:#8b95a3;--a:#3ddc97;--b:rgba(255,255,255,.14);--c1:#1b1f26;--c2:#242933;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#14171c;--p:rgba(24,28,34,.9);--t:#e8ecf1;--m:#8b95a3;--a:#3ddc97;--b:rgba(255,255,255,.14);--c1:#1b1f26;--c2:#242933;color-scheme:dark}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--t);font:13px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overflow:hidden}
+#v{position:fixed;inset:0;background:repeating-conic-gradient(var(--c1) 0 25%,var(--c2) 0 50%) 0 0/24px 24px}
+#v.flat{background:var(--bg)}
+canvas{display:block;width:100%;height:100%;touch-action:none}
+#pn{position:fixed;left:max(10px,env(safe-area-inset-left,0px));top:calc(10px + env(safe-area-inset-top,0px));width:320px;max-width:calc(100% - 20px);max-height:calc(100% - 20px);overflow:auto;background:var(--p);border:1px solid var(--b);border-radius:12px;padding:12px;backdrop-filter:blur(10px)}
+h1{font-size:15px;margin:0 0 8px}
+button,select{font:inherit;color:var(--t);background:transparent;border:1px solid var(--b);border-radius:8px;padding:6px 9px}
+button{cursor:pointer}button.pr{background:var(--a);color:#fff;border-color:var(--a);font-weight:600}
+.r{display:flex;gap:6px;align-items:center;margin:6px 0}.r label{flex:0 0 100px;color:var(--m)}.r select,.r input[type=range]{flex:1;min-width:0}.r output{flex:0 0 38px;text-align:right;color:var(--m);font-size:11px}input[type=color]{padding:0;width:34px;height:26px;border:1px solid var(--b);border-radius:6px;background:none}details{margin:8px 0;border-top:1px solid var(--b);padding-top:6px}summary{cursor:pointer;font-weight:600}
+#st{color:var(--m);margin:8px 0;min-height:18px}
+#ly{display:flex;flex-wrap:wrap;gap:4px}#ly span{border:1px solid var(--b);border-radius:20px;padding:1px 8px;font-size:11px;color:var(--m)}
+#dz{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(11,138,90,.28);border:3px dashed var(--a);font-size:22px;font-weight:600;z-index:9;pointer-events:none}
+#ov{position:fixed;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:rgba(0,0,0,.75);z-index:10;padding:20px;color:#fff}
+#ov img{max-width:90%;max-height:75%;background:repeating-conic-gradient(#888 0 25%,#bbb 0 50%) 0 0/16px 16px}
+.hint{position:fixed;bottom:calc(10px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);color:var(--m);font-size:12px;pointer-events:none;text-align:center;width:100%}
+</style></head><body>
+<div id="v"></div><div id="dz">Pusť ZIP s Gerber súbormi</div>
+<div id="pn">
+<div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><h1>Gerber 3D prehliadač</h1><select id="lg"><option value="sk">SK</option><option value="en">EN</option></select></div>
+<button class="pr" id="op" style="width:100%">Otvoriť ZIP s Gerbermi…</button>
+<input type="file" id="fi" accept=".zip" hidden>
+<div id="st">Pusť ZIP kamkoľvek do okna.</div><div id="ly"></div>
+<div class="r"><label>Pohľad</label><select id="vw"><option value="p">3D perspektíva</option><option value="t">Zhora (ortho)</option><option value="b">Zospodu (ortho)</option></select></div>
+<div class="r"><label>Maska</label><select id="mc"></select><input type="color" id="cc" value="#10562e" title="Vlastná farba masky"></div>
+<div class="r"><label>Povrch</label><select id="fin"><option value="0">ENIG zlato</option><option value="1">HASL cín</option></select></div>
+<details open><summary>Vŕtanie – zarovnanie</summary><div class="r"><label>Zarovnanie</label><select id="al"><option value="1">Auto</option><option value="0">Bez auto-zarovnania</option></select></div><div id="g_dr"></div></details>
+<details><summary>Svetlo a render</summary><div id="g_lt"></div></details>
+<details><summary>Farby masky a medi</summary><div id="g_co"></div></details>
+<details><summary>Tieň</summary><div class="r"><label>Tieň</label><select id="sd"><option value="0">Vypnutý</option><option value="1">Zapnutý</option></select></div><div id="g_sh"></div></details>
+<div class="r"><label>Pozadie</label><select id="bg"><option value="c">Šachovnica</option><option value="f">Jednofarebné</option></select></div>
+<div class="r"><label>Export</label><select id="es"><option value="1024">1024 px</option><option value="2048" selected>2048 px</option><option value="4096">4096 px</option><option value="8192">8192 px</option></select></div>
+<div class="r"><label>Formát</label><select id="ef"><option value="png">PNG (priesvitné)</option><option value="jpg">JPG (s pozadím)</option></select><input type="color" id="jc" value="#ffffff" title="Pozadie pre JPG"></div><div class="r"><button class="pr" id="ex" style="flex:1" disabled>Uložiť obrázok</button></div>
+<div class="r"><button id="sl" style="flex:1" disabled>Uložiť siluetu (maska výrezov)</button></div>
+<div style="color:var(--m);font-size:11px">PNG má alfa kanál: výrezy, diery aj pozadie sú priesvitné (tieň polopriesvitný). V pohľade Zhora/Zospodu je export orezaný presne na dosku.</div>
+</div>
+<div class="hint">ťahanie = otáčanie · Shift/pravé tlačidlo = posun · koliesko = zoom</div>
+<div id="ov"><img id="oi"><div>Uloženie nie je dostupné – klikni pravým tlačidlom na obrázok → Uložiť obrázok.<br>Klik mimo = zavrieť.</div></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script>
+const $=s=>document.querySelector(s),PI2=Math.PI*2;
+const MASKS={"Zelená":[16,86,46],"Modrá":[14,46,118],"Čierna":[24,24,26],"Červená":[150,24,24],"Biela":[226,226,220],"Žltá":[205,172,24],"Fialová":[72,26,112],"Vlastná":[16,86,46]};
+const FIN=[{c:[214,172,64],r:.28},{c:[192,194,198],r:.38}];
+Object.keys(MASKS).forEach(k=>$('#mc').add(new Option(k,k)));
+/* ---------- geometria pomocníci ---------- */
+function rot(p,d){if(!d)return p;const a=d*Math.PI/180,c=Math.cos(a),s=Math.sin(a);return p.map(q=>[q[0]*c-q[1]*s,q[0]*s+q[1]*c])}
+function ngon(cx,cy,d,n,r=0){const o=[];for(let i=0;i<n;i++){const a=r*Math.PI/180+PI2*i/n;o.push([cx+d/2*Math.cos(a),cy+d/2*Math.sin(a)])}return o}
+function stad(w,h,n=14){const o=[],r=Math.min(w,h)/2;if(w>=h){const d=(w-h)/2;for(let i=0;i<=n;i++){const a=-Math.PI/2+Math.PI*i/n;o.push([d+r*Math.cos(a),r*Math.sin(a)])}for(let i=0;i<=n;i++){const a=Math.PI/2+Math.PI*i/n;o.push([-d+r*Math.cos(a),r*Math.sin(a)])}}else{const d=(h-w)/2;for(let i=0;i<=n;i++){const a=Math.PI*i/n;o.push([r*Math.cos(a),d+r*Math.sin(a)])}for(let i=0;i<=n;i++){const a=Math.PI+Math.PI*i/n;o.push([r*Math.cos(a),-d+r*Math.sin(a)])}}return o}
+function addPoly(p,pts){let a=0;for(let i=0;i<pts.length;i++){const q=pts[(i+1)%pts.length];a+=pts[i][0]*q[1]-q[0]*pts[i][1]}if(a<0)pts=pts.slice().reverse();p.moveTo(pts[0][0],pts[0][1]);for(let i=1;i<pts.length;i++)p.lineTo(pts[i][0],pts[i][1]);p.closePath()}
+const rect=(w,h,cx=0,cy=0)=>[[cx-w/2,cy-h/2],[cx+w/2,cy-h/2],[cx+w/2,cy+h/2],[cx-w/2,cy+h/2]];
+function pip(p,poly){let c=false;for(let i=0,j=poly.length-1;i<poly.length;j=i++){const a=poly[i],b=poly[j];if((a[1]>p[1])!=(b[1]>p[1])&&p[0]<(b[0]-a[0])*(p[1]-a[1])/(b[1]-a[1])+a[0])c=!c}return c}
+function area(p){let a=0;for(let i=0;i<p.length;i++){const q=p[(i+1)%p.length];a+=p[i][0]*q[1]-q[0]*p[i][1]}return Math.abs(a/2)}
+/* ---------- Gerber parser ---------- */
+const ev=(s,v)=>Function('return '+s.replace(/\$(\d+)/g,(m,n)=>'('+(v[n-1]||0)+')').replace(/[xX]/g,'*'))();
+function macroPath(lines,par,f){const v=par.slice(),P=new Path2D();
+ for(const L of lines){if(/^\$\d+\s*=/.test(L)){const[a,b]=L.split('=');v[+a.trim().slice(1)-1]=ev(b,v);continue}
+  const q=L.split(','),c=parseInt(q[0]);if(!c)continue;let a;try{a=q.slice(1).map(s=>ev(s,v))}catch(e){continue}let pts=null;
+  if(c==1)pts=rot(ngon(a[2],a[3],a[1],28),a[4]);
+  else if(c==20){const dx=a[4]-a[2],dy=a[5]-a[3],l=Math.hypot(dx,dy)||1,nx=-dy/l*a[1]/2,ny=dx/l*a[1]/2;pts=rot([[a[2]+nx,a[3]+ny],[a[4]+nx,a[5]+ny],[a[4]-nx,a[5]-ny],[a[2]-nx,a[3]-ny]],a[6])}
+  else if(c==21)pts=rot(rect(a[1],a[2],a[3],a[4]),a[5]);
+  else if(c==4){const n=a[1],o=[];for(let i=0;i<n;i++)o.push([a[2+2*i],a[3+2*i]]);pts=rot(o,a[2+2*(n+1)])}
+  else if(c==5)pts=rot(ngon(a[2],a[3],a[4],a[1]),a[5]);
+  if(pts)addPoly(P,pts.map(p=>[p[0]*f,p[1]*f]))}
+ return P}
+function arcPts(x0,y0,x1,y1,i,j,cw,q75){let cx=x0+i,cy=y0+j;
+ if(!q75){let b=null;for(const si of[1,-1])for(const sj of[1,-1]){const ax=x0+si*Math.abs(i),ay=y0+sj*Math.abs(j),e=Math.abs(Math.hypot(x0-ax,y0-ay)-Math.hypot(x1-ax,y1-ay));if(!b||e<b.e)b={e,ax,ay}}cx=b.ax;cy=b.ay}
+ const r=Math.hypot(x0-cx,y0-cy);let a0=Math.atan2(y0-cy,x0-cx),a1=Math.atan2(y1-cy,x1-cx);
+ if(cw){while(a1>=a0-1e-9)a1-=PI2}else{while(a1<=a0+1e-9)a1+=PI2}
+ const n=Math.max(4,Math.ceil(Math.abs(a1-a0)/.05)),o=[];for(let k=1;k<n;k++){const a=a0+(a1-a0)*k/n;o.push([cx+r*Math.cos(a),cy+r*Math.sin(a)])}o.push([x1,y1]);return o}
+function parseGerber(txt){
+ const o={ops:[],fn:''},apt={},mac={};let f=1,dec=6,ap=null,mode=1,pol=1,reg=false,cx=0,cy=0,cons=null,q75=true,lastD=2,m;
+ const re=/%([^%]*)%|([^*%]*)\*/g;
+ while((m=re.exec(txt))){
+  if(m[1]!==undefined){const E=m[1];
+   if(E.startsWith('AM')){const p=E.split('*').map(s=>s.trim()).filter(Boolean);mac[p[0].slice(2)]=p.slice(1);continue}
+   for(const cm of E.split('*')){const c=cm.trim();if(!c)continue;
+    if(c.startsWith('FS')){const mm=c.match(/X(\d)(\d)/);if(mm)dec=+mm[2]}
+    else if(c.startsWith('MOIN'))f=25.4;else if(c.startsWith('MOMM'))f=1;
+    else if(c.startsWith('TF.FileFunction'))o.fn=c;
+    else if(c.startsWith('LP'))pol=c[2]=='D'?1:0;
+    else if(c.startsWith('ADD')){const mm=c.match(/^ADD(\d+)([^,]+),?(.*)$/);if(!mm)continue;const name=mm[2],par=mm[3]?mm[3].split('X').map(Number):[],P=new Path2D();let d=.1;
+     if(name=='C'){d=par[0]*f;P.arc(0,0,d/2,0,PI2)}
+     else if(name=='R'){addPoly(P,rect(par[0]*f,par[1]*f));d=Math.min(par[0],par[1])*f}
+     else if(name=='O'){addPoly(P,stad(par[0]*f,par[1]*f));d=Math.min(par[0],par[1])*f}
+     else if(name=='P'){addPoly(P,ngon(0,0,par[0]*f,par[1],par[2]||0));d=par[0]*f}
+     else if(mac[name]){P.addPath(macroPath(mac[name],par,f))}
+     apt[+mm[1]]={path:P,d}}}
+   continue}
+  const w=m[2].replace(/\s/g,'');if(!w||w.startsWith('G04'))continue;if(w=='M02')break;
+  const mm=w.match(/^(?:G(\d+))?(?:X(-?\d+))?(?:Y(-?\d+))?(?:I(-?\d+))?(?:J(-?\d+))?(?:D(\d+))?$/);if(!mm)continue;
+  const g=mm[1]!==undefined?+mm[1]:null,k=10**dec;
+  if(g==1)mode=1;else if(g==2)mode=2;else if(g==3)mode=3;else if(g==74)q75=false;else if(g==75)q75=true;else if(g==70)f=25.4;else if(g==71)f=1;
+  else if(g==36){reg=true;cons=[]}else if(g==37){if(cons&&cons.length)o.ops.push({t:'r',c:cons,pol});reg=false;cons=null}
+  const nx=mm[2]!==undefined?+mm[2]/k*f:cx,ny=mm[3]!==undefined?+mm[3]/k*f:cy,ii=mm[4]!==undefined?+mm[4]/k*f:0,jj=mm[5]!==undefined?+mm[5]/k*f:0,D=mm[6]!==undefined?+mm[6]:null;
+  if(D!==null&&D>=10){ap=apt[D];continue}
+  const op=D!==null?D:(mm[2]!==undefined||mm[3]!==undefined?lastD:null);if(op===null)continue;if(D!==null)lastD=D;
+  if(op==2){cx=nx;cy=ny;if(reg)cons.push([[cx,cy]])}
+  else if(op==1){const pts=mode==1?[[nx,ny]]:arcPts(cx,cy,nx,ny,ii,jj,mode==2,q75);
+   if(reg){if(!cons.length)cons.push([[cx,cy]]);cons[cons.length-1].push(...pts)}else o.ops.push({t:'l',pts:[[cx,cy],...pts],ap,pol});cx=nx;cy=ny}
+  else if(op==3){if(ap)o.ops.push({t:'f',x:nx,y:ny,ap,pol});cx=nx;cy=ny}
+ }
+ return o}
+/* ---------- Excellon ---------- */
+function parseDrill(t,dov){const H=[],S=[],T={};let f=1,cur=.3,route=false,pos=[0,0],lz=false,fmt=null;
+ const xy=(s,d)=>{const a=s.match(/X(-?[\d.]+)/),b=s.match(/Y(-?[\d.]+)/),n=v=>{if(v.includes('.'))return+v;const dc=dov||(fmt?fmt[1]:(f==1?3:4)),tot=dov?2+dov:fmt?fmt[0]+fmt[1]:6,ng=v[0]=='-';v=v.replace('-','');if(lz)v=v.padEnd(tot,'0');return(ng?-1:1)*+v/10**dc};return[a?n(a[1])*f:d[0],b?n(b[1])*f:d[1]]};
+ for(let L of t.split(/\r?\n/)){L=L.trim();if(!L)continue;if(L[0]==';'){const q=L.match(/FORMAT=(\d):(\d)/);if(q)fmt=[+q[1],+q[2]];continue}
+  if(L=='M72'){f=25.4;continue}if(L=='M71'){f=1;continue}
+  if(/^(METRIC|INCH)/.test(L)){f=L.startsWith('INCH')?25.4:1;lz=/LZ/.test(L);const q=L.match(/(\d)\.(\d)/);if(q)fmt=[+q[1],+q[2]];continue}
+  let m=L.match(/^T(\d+).*?C([\d.]+)/);if(m){T[+m[1]]=+m[2]*f;continue}
+  if(m=L.match(/^T(\d+)$/)){cur=T[+m[1]]||cur;continue}
+  if(L.includes('G85')){const[a,b]=L.split('G85'),p1=xy(a,pos),p2=xy(b,p1);S.push([p1,p2,cur]);pos=p2;continue}
+  if(L=='M15'){route=true;continue}if(L=='M16'){route=false;continue}
+  if(/^G0?0(?!\d)/.test(L)){if(/[XY]/.test(L))pos=xy(L,pos);continue}
+  if(/^G0?1(?!\d)/.test(L)){const p=xy(L,pos);if(route)S.push([pos,p,cur]);pos=p;continue}
+  if(/^[XY]/.test(L)){const p=xy(L,pos);H.push([p[0],p[1],cur]);pos=p}}
+ return{H,S}}
+/* ---------- klasifikácia vrstiev ---------- */
+function classify(n,t){n=n.toLowerCase();const head=t.slice(0,500);
+ if(/(^|\n)M48/.test(head)||/\.(drl|xln|drd)$/.test(n))return'drill';
+ const fn=(t.match(/%TF\.FileFunction,([^*%]*)/)||[])[1]||'';
+ if(fn){if(/Profile/i.test(fn))return'ol';if(/Copper,L\d+,Top/i.test(fn))return'tc';if(/Copper,L\d+,Bot/i.test(fn))return'bc';
+  if(/Soldermask,Top/i.test(fn))return'tm';if(/Soldermask,Bot/i.test(fn))return'bm';if(/Legend,Top/i.test(fn))return'ts';if(/Legend,Bot/i.test(fn))return'bs';if(/Paste|Copper|Other|Drill/i.test(fn))return null}
+ if(/edge[._-]?cuts|\.(gko|gm1|gml|oln)$|outline|profile/.test(n))return'ol';
+ if(/f[._-]mask|\.gts$|\.stc$|top.*mask/.test(n))return'tm';if(/b[._-]mask|\.gbs$|\.sts$|bot.*mask/.test(n))return'bm';
+ if(/f[._-]silk|\.gto$|\.plc$|top.*(silk|legend)/.test(n))return'ts';if(/b[._-]silk|\.gbo$|\.pls$|bot.*(silk|legend)/.test(n))return'bs';
+ if(/f[._-]cu|\.gtl$|\.cmp$|top.*cop/.test(n))return'tc';if(/b[._-]cu|\.gbl$|\.sol$|bot.*cop/.test(n))return'bc';return null}
+/* ---------- obrys dosky ---------- */
+function outlineLoops(ops){const paths=[];for(const o of ops){if(o.t=='l')paths.push(o.pts.slice());else if(o.t=='r')o.c.forEach(c=>paths.push(c.slice()))}
+ const tol=.03,cl=(a,b)=>Math.hypot(a[0]-b[0],a[1]-b[1])<tol,loops=[];
+ while(paths.length){let c=paths.pop();for(let g=true;g;){g=false;if(c.length>2&&cl(c[0],c[c.length-1]))break;
+  for(let i=0;i<paths.length;i++){const p=paths[i];if(cl(c[c.length-1],p[0])){c=c.concat(p.slice(1));paths.splice(i,1);g=true;break}
+   if(cl(c[c.length-1],p[p.length-1])){c=c.concat(p.slice().reverse().slice(1));paths.splice(i,1);g=true;break}}}
+  if(c.length>3&&cl(c[0],c[c.length-1]))loops.push(c.slice(0,-1))}
+ return loops}
+/* ---------- rasterizácia vrstiev ---------- */
+function rasterize(ops,B,s,W,H){const c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d',{willReadFrequently:true});
+ x.setTransform(s,0,0,-s,-B.x0*s,B.y1*s);x.fillStyle=x.strokeStyle='#fff';x.lineCap=x.lineJoin='round';
+ for(const o of ops){x.globalCompositeOperation=o.pol?'source-over':'destination-out';
+  if(o.t=='f'){x.save();x.translate(o.x,o.y);x.fill(o.ap.path);x.restore()}
+  else if(o.t=='l'){x.lineWidth=Math.max(o.ap?o.ap.d:.01,.01);x.beginPath();x.moveTo(o.pts[0][0],o.pts[0][1]);for(let i=1;i<o.pts.length;i++)x.lineTo(o.pts[i][0],o.pts[i][1]);x.stroke()}
+  else{x.beginPath();for(const k of o.c){x.moveTo(k[0][0],k[0][1]);for(let i=1;i<k.length;i++)x.lineTo(k[i][0],k[i][1]);x.closePath()}x.fill()}}
+ const d=x.getImageData(0,0,W,H).data,a=new Uint8Array(W*H);for(let i=0;i<a.length;i++){const v=d[i*4+3]/255;a[i]=Math.max(0,Math.min(1,(v-.12)/.6))*255}return a}
+/* ---------- three.js scéna ---------- */
+const host=$('#v'),renderer=new THREE.WebGLRenderer({antialias:true,alpha:true,preserveDrawingBuffer:true});
+renderer.outputEncoding=THREE.sRGBEncoding;renderer.toneMapping=THREE.LinearToneMapping;renderer.toneMappingExposure=.85;renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFShadowMap;renderer.setClearColor(0,0);
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));host.appendChild(renderer.domElement);
+const scene=new THREE.Scene(),pc=new THREE.PerspectiveCamera(32,1,1,3000),oc=new THREE.OrthographicCamera(-1,1,1,-1,1,300);
+(function(){const e=new THREE.Scene();e.add(new THREE.Mesh(new THREE.BoxGeometry(60,60,60),new THREE.MeshBasicMaterial({color:0x1a1d23,side:THREE.BackSide})));
+ const mk=(w,h,x,y,z,i)=>{const m=new THREE.Mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshBasicMaterial({color:new THREE.Color(i,i,i),side:2}));m.position.set(x,y,z);m.lookAt(0,0,0);e.add(m)};
+ mk(18,18,0,0,24,4);mk(8,26,-24,0,8,3);mk(8,26,24,-4,8,2);mk(26,6,0,24,8,2);mk(26,6,0,-24,10,1.5);mk(14,14,0,0,-24,2);
+ scene.environment=new THREE.PMREMGenerator(renderer).fromScene(e,.03).texture})();
+const d1=new THREE.DirectionalLight(0xffffff,.3);d1.position.set(-30,-40,70);d1.castShadow=true;d1.shadow.mapSize.set(2048,2048);scene.add(d1);
+const d2=new THREE.DirectionalLight(0xffffff,.18);d2.position.set(30,-30,-70);scene.add(d2);
+const gnd=new THREE.Mesh(new THREE.PlaneGeometry(1,1),new THREE.ShadowMaterial({opacity:.45,depthWrite:false}));gnd.receiveShadow=true;gnd.visible=false;scene.add(gnd);
+let root=null,sides={},bw=100,bh=80,view='p',th=-Math.PI/2,ph=.95,dist=150,zm=1,hhv=50,dirty=true;const tg=new THREE.Vector3();
+function upd(){const asp=innerWidth/innerHeight;
+ if(view=='p'){pc.aspect=asp;pc.up.set(0,0,1);pc.position.set(tg.x+dist*Math.sin(ph)*Math.cos(th),tg.y+dist*Math.sin(ph)*Math.sin(th),tg.z+dist*Math.cos(ph));pc.lookAt(tg);pc.updateProjectionMatrix();pc.updateMatrixWorld()}
+ else{hhv=Math.max(bh/2,bw/2/asp)*1.06;oc.left=-hhv*asp;oc.right=hhv*asp;oc.top=hhv;oc.bottom=-hhv;oc.zoom=zm;oc.up.set(0,1,0);oc.position.set(tg.x,tg.y,view=='t'?100:-100);oc.lookAt(tg.x,tg.y,0);oc.updateProjectionMatrix();oc.updateMatrixWorld()}}
+function frame(){requestAnimationFrame(frame);if(!dirty)return;dirty=false;upd();const c=view=='p'?pc:oc;gnd.visible=$('#sd').value=='1'&&c.position.z>0;renderer.render(scene,c)}
+function resize(){renderer.setSize(innerWidth,innerHeight);dirty=true}addEventListener('resize',resize);resize();frame();
+function setView(v){view=v;tg.set(0,0,0);zm=1;dirty=true}
+$('#vw').onchange=e=>setView(e.target.value);
+$('#bg').onchange=e=>host.classList.toggle('flat',e.target.value=='f');
+/* ovládanie */
+const cv=renderer.domElement,ptr=new Map();cv.oncontextmenu=e=>e.preventDefault();
+cv.onpointerdown=e=>{cv.setPointerCapture(e.pointerId);ptr.set(e.pointerId,[e.clientX,e.clientY,e.shiftKey||e.button>0])};
+cv.onpointerup=cv.onpointercancel=e=>ptr.delete(e.pointerId);
+cv.onpointermove=e=>{const p=ptr.get(e.pointerId);if(!p)return;const dx=e.clientX-p[0],dy=e.clientY-p[1];
+ if(ptr.size>=2){const o=[...ptr.values()].find(q=>q!==p),d0=Math.hypot(p[0]-o[0],p[1]-o[1]);p[0]=e.clientX;p[1]=e.clientY;const d1=Math.hypot(p[0]-o[0],p[1]-o[1]);if(d1>0){if(view=='p')dist=Math.max(5,dist*d0/d1);else zm=Math.max(.2,zm*d1/d0)}}
+ else{p[0]=e.clientX;p[1]=e.clientY;
+  if(p[2]||view!='p'){if(view=='p'){const sc=2*dist*Math.tan(pc.fov*Math.PI/360)/innerHeight,m=pc.matrixWorld.elements;tg.x+=-m[0]*dx*sc+m[4]*dy*sc;tg.y+=-m[1]*dx*sc+m[5]*dy*sc;tg.z+=-m[2]*dx*sc+m[6]*dy*sc}
+   else{const sc=2*hhv/zm/innerHeight;tg.x+=(view=='t'?-dx:dx)*sc;tg.y+=dy*sc}}
+  else{th-=dx*.006;ph=Math.min(Math.PI-.04,Math.max(.04,ph-dy*.006))}}
+ dirty=true};
+cv.onwheel=e=>{e.preventDefault();const k=Math.exp(e.deltaY*.0012);if(view=='p')dist=Math.max(5,dist*k);else zm=Math.max(.2,zm/k);dirty=true};
+/* ---------- zloženie textúr ---------- */
+function compose(S){const g0=MASKS[$('#mc').value],sa=+$('#sa').value,gr=g0[0]*.3+g0[1]*.59+g0[2]*.11,mc=g0.map(v=>Math.max(0,Math.min(255,gr+(v-gr)*sa))),mb=+$('#mb').value,mu=+$('#mu').value,fin=FIN[+$('#fin').value],N=S.W*S.H,{cu,mk,sk}=S,dc=S.ic.data,db=S.ib.data,dr=S.ir.data;
+ const pl=mc.map(v=>v*.8*mb),un=mc.map(v=>Math.min(255,v*mu*mb+6)),fr=[170,146,92],sc=[238,236,228];
+ for(let i=0;i<N;i++){const a=cu[i]/255,o=mk?mk[i]/255:1,s=sk?sk[i]/255:0,q=i*4,t=s*(1-o),hm=.45+.1*a,hs=.28+.3*a;
+  for(let k=0;k<3;k++){const ma=pl[k]+(un[k]-pl[k])*a,su=fr[k]+(fin.c[k]-fr[k])*a;let c=ma+(su-ma)*o;dc[q+k]=c+(sc[k]-c)*t}
+  dc[q+3]=255;let r=.45-.11*a;r+=(.85+(fin.r-.85)*a-r)*o;r+=(.75-r)*t;
+  const g=Math.max(0,Math.min(1,hm+(hs-hm)*o+t*.12))*255;db[q]=db[q+1]=db[q+2]=g;db[q+3]=255;
+  dr[q]=255;dr[q+1]=r*255;dr[q+2]=a*o*(1-s)*255;dr[q+3]=255}
+ S.cs.forEach((c,i)=>c.getContext('2d').putImageData([S.ic,S.ib,S.ir][i],0,0));S.tx.forEach(t=>t.needsUpdate=true);dirty=true}
+function mkSide(cu,mk,sk,W,H,back){const S={cu,mk,sk,W,H};S.cs=[0,1,2].map(()=>{const c=document.createElement('canvas');c.width=W;c.height=H;return c});
+ S.ic=new ImageData(W,H);S.ib=new ImageData(W,H);S.ir=new ImageData(W,H);S.tx=S.cs.map((c,i)=>{const t=new THREE.CanvasTexture(c);t.anisotropy=renderer.capabilities.getMaxAnisotropy();if(!i)t.encoding=THREE.sRGBEncoding;return t});
+ S.mat=new THREE.MeshPhysicalMaterial({map:S.tx[0],bumpMap:S.tx[1],bumpScale:1.5,roughnessMap:S.tx[2],metalnessMap:S.tx[2],roughness:1,metalness:1,clearcoat:.12,clearcoatRoughness:.35,envMapIntensity:.8,side:back?THREE.BackSide:THREE.FrontSide,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2});return S}
+['#mc','#fin'].forEach(s=>$(s).onchange=()=>Object.values(sides).forEach(compose));
+$('#cc').onchange=e=>{const h=e.target.value;MASKS['Vlastná']=[1,3,5].map(i=>parseInt(h.substr(i,2),16));$('#mc').value='Vlastná';Object.values(sides).forEach(compose)};
+$('#sd').onchange=()=>dirty=true;
+let gt=0;const geoSoon=()=>{if(gt||!last)return;gt=requestAnimationFrame(async()=>{gt=0;show(await build(last.L,last.dr,true))})};
+const SL=[['dr','ox','Posun X mm',-25,25,.01,0],['dr','oy','Posun Y mm',-25,25,.01,0],['lt','xp','Expozícia',.3,2,.01,.85],['lt','cb','Jas farieb',.5,1.6,.01,1],['lt','ei','Okolité svetlo',0,2,.01,.8],['lt','ki','Kľúčové svetlo',0,1.5,.01,.3],['lt','la','Smer svetla °',0,360,1,240],['lt','le','Výška svetla °',5,90,1,55],['lt','cl','Lesk masky',0,1,.01,.12],['lt','rg','Drsnosť ×',.3,1.8,.01,1],['lt','bs','Reliéf',0,5,.05,1.5],['co','mb','Jas masky',.5,1.6,.01,1],['co','mu','Presvit medi',.8,2,.01,1.25],['co','sa','Sýtosť masky',0,1.6,.01,1],['sh','sg','Odstup podložky',0,80,.5,8],['sh','so','Sila tieňa',.05,1,.01,.45],['sh','sr','Rozmazanie',1,16,.5,6]];
+SL.forEach(([g,id,lb,mn,mx,st,v])=>{$('#g_'+g).insertAdjacentHTML('beforeend','<div class="r"><label>'+lb+'</label><input type="range" id="'+id+'" min="'+mn+'" max="'+mx+'" step="'+st+'" value="'+v+'"><output id="o_'+id+'">'+v+'</output></div>');
+ $('#'+id).oninput=e=>{$('#o_'+id).textContent=e.target.value;if(g=='dr')geoSoon();else if(g!='co')look()};
+ if(g=='co')$('#'+id).onchange=()=>Object.values(sides).forEach(compose)});
+function look(){const v=id=>+$('#'+id).value;renderer.toneMappingExposure=v('xp');
+ const R=Math.max(bw,bh)*2.5,az=v('la')*Math.PI/180,el=v('le')*Math.PI/180;
+ d1.position.set(R*Math.cos(el)*Math.cos(az),R*Math.cos(el)*Math.sin(az),R*Math.sin(el));d1.intensity=v('ki');
+ d2.position.set(-d1.position.x*.5,-d1.position.y*.5,-R*.8);d2.intensity=v('ki')*.6;
+ const sc=d1.shadow.camera,E=Math.max(bw,bh)*1.6;sc.left=sc.bottom=-E;sc.right=sc.top=E;sc.near=1;sc.far=R*3;sc.updateProjectionMatrix();d1.shadow.radius=v('sr');
+ gnd.position.z=-.8-v('sg');gnd.material.opacity=v('so');gnd.scale.setScalar(Math.max(bw,bh)*6);
+ for(const S of Object.values(sides)){const m=S.mat;m.color.setScalar(v('cb'));m.envMapIntensity=v('ei');m.clearcoat=v('cl');m.roughness=v('rg');m.bumpScale=v('bs')}
+ if(root)root.children[0].material.envMapIntensity=v('ei');dirty=true}
+look();
+/* ---------- auto-zarovnanie vŕtania ---------- */
+function alignDrills(dr,L){const ID={fx:1,fy:1,dx:0,dy:0},F=[],H=[];
+ for(const k of['tc','bc'])if(L[k])for(const o of L[k].ops)if(o.t=='f'&&o.pol)F.push([o.x,o.y]);
+ dr.forEach(t=>{t.H.forEach(h=>H.push([h[0],h[1]]));t.S.forEach(s=>H.push([(s[0][0]+s[1][0])/2,(s[0][1]+s[1][1])/2]))});
+ if(!F.length||!H.length)return ID;
+ const seen=new Set(),FF=[];for(const p of F){const k=Math.round(p[0]*20)+','+Math.round(p[1]*20);if(!seen.has(k)){seen.add(k);FF.push(p)}}
+ const thin=(a,n)=>a.length>n?a.filter((_,i)=>i%Math.ceil(a.length/n)==0):a,Hs=thin(H,300),Fs=thin(FF,3000),q=.1,K=100003;
+ let best=null,idScore=0;
+ for(const fx of[1,-1])for(const fy of[1,-1]){const m=new Map();
+  for(const h of Hs){const hx=h[0]*fx,hy=h[1]*fy;for(const f of Fs){const k=Math.round((f[0]-hx)/q)*K+Math.round((f[1]-hy)/q);m.set(k,(m.get(k)||0)+1)}}
+  const sum=k=>{let s=0;for(let a=-1;a<=1;a++)for(let b=-1;b<=1;b++)s+=m.get(k+a*K+b)||0;return s};
+  if(fx==1&&fy==1)idScore=sum(0);
+  for(const k of m.keys()){const s=sum(k);if(!best||s>best.s)best={s,k,fx,fy}}}
+ if(!best||best.s<Math.max(3,Hs.length*.15)||best.s<idScore*1.5+2)return ID;
+ const kx=Math.round(best.k/K),ky=best.k-kx*K,cx=kx*q,cy=ky*q;let sx=0,sy=0,n=0;
+ for(const h of Hs){const hx=h[0]*best.fx,hy=h[1]*best.fy;for(const f of Fs){const dx=f[0]-hx,dy=f[1]-hy;if(Math.abs(dx-cx)<.15&&Math.abs(dy-cy)<.15){sx+=dx;sy+=dy;n++}}}
+ return n?{fx:best.fx,fy:best.fy,dx:sx/n,dy:sy/n}:ID}
+/* ---------- zostavenie dosky ---------- */
+const T=1.6,tick=()=>new Promise(r=>setTimeout(r,30));
+async function build(L,drills,geo){
+ let loops=L.ol?outlineLoops(L.ol.ops):[];
+ if(!loops.length){let a=1e9,b=1e9,c=-1e9,d=-1e9;for(const k of['tc','bc','ts','bs'])if(L[k])for(const o of L[k].ops){const P=o.t=='f'?[[o.x,o.y]]:o.t=='l'?o.pts:o.c.flat();for(const p of P){a=Math.min(a,p[0]);c=Math.max(c,p[0]);b=Math.min(b,p[1]);d=Math.max(d,p[1])}}
+  if(a>c)throw new Error('Nenašiel som obrys ani meď.');loops=[[[a-.5,b-.5],[c+.5,b-.5],[c+.5,d+.5],[a-.5,d+.5]]]}
+ loops.forEach(l=>l.a=area(l));loops.sort((x,y)=>y.a-x.a);
+ loops.forEach((l,i)=>{const cs=[];for(let j=0;j<i;j++)if(pip(l[0],loops[j]))cs.push(j);l.dp=cs.length;l.par=cs.length?cs[cs.length-1]:-1});
+ const tops=loops.filter(l=>l.dp==0);let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;for(const l of tops)for(const p of l){x0=Math.min(x0,p[0]);x1=Math.max(x1,p[0]);y0=Math.min(y0,p[1]);y1=Math.max(y1,p[1])}
+ const w=x1-x0,h=y1-y0,cx=(x0+x1)/2,cy=(y0+y1)/2,B={x0,y1};bw=w;bh=h;
+ const s=Math.min(20,Math.min(3072,renderer.capabilities.maxTextureSize)/Math.max(w,h)),W=Math.ceil(w*s),H=Math.ceil(h*s);
+ const V=l=>l.map(p=>new THREE.Vector2(p[0]-cx,p[1]-cy)),shapeOf=new Map(),shapes=[];
+ loops.forEach((l,i)=>{if(l.dp%2==0){const sh=new THREE.Shape(V(l));sh.l=l;shapeOf.set(i,sh);shapes.push(sh)}});
+ loops.forEach((l,i)=>{if(l.dp%2==1&&shapeOf.has(l.par))shapeOf.get(l.par).holes.push(new THREE.Path(V(l)))});
+ let nh=0;const owner=p=>{let b=null;loops.forEach((l,i)=>{if(l.dp%2==0&&pip(p,l)&&(!b||l.a<b.l.a))b={l,i}});return b&&shapeOf.get(b.i)};
+ const hole=(p,pts)=>{const sh=owner(p);if(!sh)return;for(const l of loops)if(l.dp%2==1&&pip(p,l))return;sh.holes.push(new THREE.Path(pts.map(q=>new THREE.Vector2(q[0]-cx,q[1]-cy))));nh++};
+ const A=Object.assign({},$('#al').value=='1'?(drills.A=drills.A||alignDrills(drills,L)):{fx:1,fy:1,dx:0,dy:0});A.dx+=+$('#ox').value;A.dy+=+$('#oy').value;const tr=p=>[p[0]*A.fx+A.dx,p[1]*A.fy+A.dy];
+ for(const t of drills){for(const h of t.H){const[px,py]=tr(h),d=h[2];hole([px,py],ngon(px,py,d,Math.max(10,Math.min(32,Math.round(d*14)))))}
+  for(const s2 of t.S){const a=tr(s2[0]),b=tr(s2[1]),d=s2[2],ang=Math.atan2(b[1]-a[1],b[0]-a[0])*180/Math.PI,l=Math.hypot(b[0]-a[0],b[1]-a[1]),mx=(a[0]+b[0])/2,my=(a[1]+b[1])/2;hole([mx,my],rot(stad(l+d,d),ang).map(q=>[q[0]+mx,q[1]+my]))}}
+ let top,bot;if(geo&&sides.top){top=sides.top;bot=sides.bot}else{const z=k=>L[k]?rasterize(L[k].ops,B,s,W,H):null,zero=()=>new Uint8Array(W*H);top=mkSide(z('tc')||zero(),z('tm'),z('ts'),W,H,false);bot=mkSide(z('bc')||zero(),z('bm'),z('bs'),W,H,true);Object.values(sides).forEach(S=>{S.tx.forEach(t=>t.dispose());S.mat.dispose()});sides={top,bot}}
+ if(root){scene.remove(root);root.traverse(o=>{if(o.geometry)o.geometry.dispose()})}
+ root=new THREE.Group();
+ const eg=new THREE.ExtrudeGeometry(shapes,{depth:T,bevelEnabled:false,curveSegments:1});eg.translate(0,0,-T/2);
+ {const m=new THREE.Mesh(eg,new THREE.MeshStandardMaterial({color:0xb39a62,roughness:.75}));m.castShadow=true;root.add(m)}
+ const face=(S,zz)=>{const g=new THREE.ShapeGeometry(shapes,1),p=g.attributes.position,u=g.attributes.uv;for(let i=0;i<p.count;i++)u.setXY(i,(p.getX(i)+w/2)/w,(p.getY(i)+h/2)/h);g.translate(0,0,zz);const m=new THREE.Mesh(g,S.mat);m.castShadow=true;root.add(m)};
+ face(top,T/2+.01);face(bot,-T/2-.01);scene.add(root);if(!geo){compose(top);compose(bot);dist=Math.max(w,h)*2.1;ph=.95;th=-Math.PI/2;setView($('#vw').value)}look();dirty=true;
+ return{w,h,cut:loops.filter(l=>l.dp%2==1).length,nh,A}}
+/* ---------- načítanie ZIP ---------- */
+let last=null;
+const show=r=>{const A=r.A,sh=A.dx||A.dy||A.fx<0||A.fy<0;setSt(()=>t('Doska ')+r.w.toFixed(1)+' × '+r.h.toFixed(1)+' mm · '+t('výrezov: ')+r.cut+' · '+t('otvorov: ')+r.nh+(sh?' · '+t('vŕtanie zarovnané (')+(A.fx<0?t('zrkadlo X, '):'')+(A.fy<0?t('zrkadlo Y, '):'')+t('posun ')+A.dx.toFixed(2)+'; '+A.dy.toFixed(2)+' mm)':''))};
+$('#al').onchange=async()=>{if(last){setSt(()=>t('Prepočítavam…'));await tick();show(await build(last.L,last.dr,true))}};
+async function load(file){setSt(()=>t('Čítam ZIP…'));await tick();
+ try{const z=await JSZip.loadAsync(file),L={},dr=[],dtx=[],names=[];
+  for(const e of Object.values(z.files)){if(e.dir||/(^|\/)(\.|__MACOSX)/.test(e.name))continue;const t=await e.async('string'),k=classify(e.name,t);
+   if(k=='drill'){dtx.push(t);names.push('vŕtanie')}else if(k&&!L[k]){L[k]=parseGerber(t);names.push({tc:'meď hore',bc:'meď dole',tm:'maska hore',bm:'maska dole',ts:'silk hore',bs:'silk dole',ol:'obrys'}[k])}}
+  if(!names.length)throw new Error('V ZIP som nenašiel žiadne Gerber súbory.');
+  {const ops=(L.ol||L.tc||L.bc||{ops:[]}).ops;let a=1e9,b=1e9,c=-1e9,d=-1e9;for(const o of ops){const P=o.t=='f'?[[o.x,o.y]]:o.t=='l'?o.pts:o.c.flat();for(const p of P){a=Math.min(a,p[0]);c=Math.max(c,p[0]);b=Math.min(b,p[1]);d=Math.max(d,p[1])}}
+   for(const t of dtx){let best=null;for(const dv of[0,3,4,5,6]){const r=parseDrill(t,dv),n=r.H.filter(h=>h[0]>=a-1&&h[0]<=c+1&&h[1]>=b-1&&h[1]<=d+1).length;if(!best||n>best.n)best={n,r}}dr.push(best.r)}}
+  $('#ly').innerHTML=names.map(n=>'<span>'+n+'</span>').join('');setSt(()=>t('Spracúvam textúry…'));await tick();
+  last={L,dr};$('#ox').value=0;$('#oy').value=0;$('#o_ox').textContent=$('#o_oy').textContent=0;show(await build(L,dr));$('#ex').disabled=$('#sl').disabled=false}
+ catch(err){setSt(()=>t('Chyba: ')+t(err.message));console.error(err)}}
+$('#op').onclick=()=>$('#fi').click();$('#fi').onchange=e=>e.target.files[0]&&load(e.target.files[0]);
+const dz=$('#dz');addEventListener('dragover',e=>{e.preventDefault();dz.style.display='flex'});addEventListener('dragleave',e=>{if(!e.relatedTarget)dz.style.display='none'});
+addEventListener('drop',e=>{e.preventDefault();dz.style.display='none';const f=e.dataTransfer.files[0];if(f)load(f)});
+/* ---------- export PNG s alfa kanálom ---------- */
+async function save(blob,name){let dl=null;try{if(window.claude&&claude.use)dl=await claude.use('downloads')}catch(e){}
+ if(dl){try{await dl.save({filename:name,data:blob});return}catch(e){if(e&&e.code=='declined')return}}
+if(!(window.claude&&claude.use)){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();return}
+ $('#oi').src=URL.createObjectURL(blob);$('#ov').style.display='flex'}
+$('#ov').onclick=()=>$('#ov').style.display='none';
+async function exportPNG(sil){if(!root)return;const long=Math.min(+$('#es').value,renderer.capabilities.maxTextureSize,8192);let cam,asp;
+ if(view=='p'){cam=pc;asp=innerWidth/innerHeight}else{asp=bw/bh;cam=new THREE.OrthographicCamera(-bw/2,bw/2,bh/2,-bh/2,1,300);cam.up.set(0,1,0);cam.position.set(0,0,view=='t'?100:-100);cam.lookAt(0,0,0)}
+ const W=asp>=1?long:Math.round(long*asp),H=asp>=1?Math.round(long/asp):long,pr=renderer.getPixelRatio(),tm=renderer.toneMapping,old=pc.aspect;
+ renderer.setPixelRatio(1);renderer.setSize(W,H,false);if(view=='p'){pc.aspect=asp;pc.updateProjectionMatrix()}
+ const jpg=!sil&&$('#ef').value=='jpg';gnd.visible=!sil&&$('#sd').value=='1'&&cam.position.z>0;
+ if(sil){scene.overrideMaterial=new THREE.MeshBasicMaterial({color:0xffffff});renderer.toneMapping=THREE.NoToneMapping}
+ if(jpg)renderer.setClearColor($('#jc').value,1);
+ renderer.render(scene,cam);const blob=await new Promise(r=>renderer.domElement.toBlob(r,jpg?'image/jpeg':'image/png',.95));
+ scene.overrideMaterial=null;renderer.setClearColor(0,0);renderer.toneMapping=tm;renderer.setPixelRatio(pr);renderer.setSize(innerWidth,innerHeight);pc.aspect=old;pc.updateProjectionMatrix();dirty=true;
+ await save(blob,(sil?'pcb-silueta-':'pcb-')+({p:'3d',t:'top',b:'bottom'})[view]+'-'+W+'x'+H+(jpg?'.jpg':'.png'))}
+$('#ex').onclick=()=>exportPNG(false);$('#sl').onclick=()=>exportPNG(true);
+/* ---------- jazyk SK / EN ---------- */
+const EN={'Gerber 3D prehliadač':'Gerber 3D viewer','Otvoriť ZIP s Gerbermi…':'Open Gerber ZIP…','Pusť ZIP kamkoľvek do okna.':'Drop a ZIP anywhere in the window.','Pusť ZIP s Gerber súbormi':'Drop a ZIP with Gerber files','Pohľad':'View','3D perspektíva':'3D perspective','Zhora (ortho)':'Top (ortho)','Zospodu (ortho)':'Bottom (ortho)','Maska':'Mask','Povrch':'Finish','ENIG zlato':'ENIG gold','HASL cín':'HASL tin','Vŕtanie – zarovnanie':'Drills – alignment','Zarovnanie':'Alignment','Bez auto-zarovnania':'No auto-alignment','Svetlo a render':'Light & render','Farby masky a medi':'Mask & copper colors','Tieň':'Shadow','Vypnutý':'Off','Zapnutý':'On','Pozadie':'Background','Šachovnica':'Checkerboard','Jednofarebné':'Solid color','Formát':'Format','PNG (priesvitné)':'PNG (transparent)','JPG (s pozadím)':'JPG (with background)','Uložiť obrázok':'Save image','Uložiť siluetu (maska výrezov)':'Save silhouette (cutout mask)','PNG má alfa kanál: výrezy, diery aj pozadie sú priesvitné (tieň polopriesvitný). V pohľade Zhora/Zospodu je export orezaný presne na dosku.':'PNG has an alpha channel: cutouts, holes and background are transparent (shadow is semi-transparent). In Top/Bottom view the export is cropped exactly to the board.','ťahanie = otáčanie · Shift/pravé tlačidlo = posun · koliesko = zoom':'drag = rotate · Shift/right button = pan · wheel = zoom','Uloženie nie je dostupné – klikni pravým tlačidlom na obrázok → Uložiť obrázok.':'Saving is not available – right-click the image → Save image.','Klik mimo = zavrieť.':'Click outside to close.','Zelená':'Green','Modrá':'Blue','Čierna':'Black','Červená':'Red','Biela':'White','Žltá':'Yellow','Fialová':'Purple','Vlastná':'Custom','Vlastná farba masky':'Custom mask color','Pozadie pre JPG':'Background for JPG','Posun X mm':'Offset X mm','Posun Y mm':'Offset Y mm','Expozícia':'Exposure','Jas farieb':'Color brightness','Okolité svetlo':'Ambient light','Kľúčové svetlo':'Key light','Smer svetla °':'Light direction °','Výška svetla °':'Light elevation °','Lesk masky':'Mask gloss','Drsnosť ×':'Roughness ×','Reliéf':'Relief','Jas masky':'Mask brightness','Presvit medi':'Copper show-through','Sýtosť masky':'Mask saturation','Odstup podložky':'Ground gap','Sila tieňa':'Shadow strength','Rozmazanie':'Blur','meď hore':'top copper','meď dole':'bottom copper','maska hore':'top mask','maska dole':'bottom mask','silk hore':'top silk','silk dole':'bottom silk','obrys':'outline','vŕtanie':'drill','Doska ':'Board ','výrezov: ':'cutouts: ','otvorov: ':'holes: ','vŕtanie zarovnané (':'drills aligned (','zrkadlo X, ':'mirror X, ','zrkadlo Y, ':'mirror Y, ','posun ':'offset ','Čítam ZIP…':'Reading ZIP…','Spracúvam textúry…':'Processing textures…','Prepočítavam…':'Recalculating…','Chyba: ':'Error: ','Nenašiel som obrys ani meď.':'No outline or copper found.','V ZIP som nenašiel žiadne Gerber súbory.':'No Gerber files found in the ZIP.'};
+let LG=(()=>{try{const s=localStorage.getItem('lg');if(s)return s}catch(e){}return /^(sk|cs)/i.test(navigator.language)?'sk':'en'})();
+const t=s=>LG=='en'&&EN[s]||s;let stFn=()=>t('Pusť ZIP kamkoľvek do okna.');
+function setSt(f){stFn=f;applyLang()}
+function applyLang(){document.documentElement.lang=LG;document.title=t('Gerber 3D prehliadač');
+ const w=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT,{acceptNode:n=>{const p=n.parentNode;return p.id=='st'||/^(SCRIPT|STYLE)$/.test(p.tagName)||!n.nodeValue.trim()?NodeFilter.FILTER_REJECT:NodeFilter.FILTER_ACCEPT}});
+ for(let n;n=w.nextNode();){if(n.__o===undefined)n.__o=n.nodeValue;const k=n.__o.trim(),v=LG=='en'&&EN[k]||k;n.nodeValue=n.__o.replace(k,()=>v)}
+ document.querySelectorAll('[title]').forEach(e=>{if(e.__t===undefined)e.__t=e.title;e.title=LG=='en'&&EN[e.__t]||e.__t});$('#st').textContent=stFn()}
+$('#lg').value=LG;$('#lg').onchange=e=>{LG=e.target.value;try{localStorage.setItem('lg',LG)}catch(x){}applyLang()};applyLang();
+</script></body></html>
