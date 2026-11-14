@@ -3,20 +3,20 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Gerber 3D prehliadač</title>
 <style>
-:root{--bg:#e9ecf0;--p:rgba(255,255,255,.92);--t:#1b2330;--m:#5b6676;--a:#0b8a5a;--b:rgba(0,0,0,.15);--c1:#d6dae0;--c2:#e6e9ee;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
+:root{--pw:320px;--bg:#e9ecf0;--p:rgba(255,255,255,.92);--t:#1b2330;--m:#5b6676;--a:#0b8a5a;--b:rgba(0,0,0,.15);--c1:#d6dae0;--c2:#e6e9ee;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14171c;--p:rgba(24,28,34,.9);--t:#e8ecf1;--m:#8b95a3;--a:#3ddc97;--b:rgba(255,255,255,.14);--c1:#1b1f26;--c2:#242933;color-scheme:dark}}
 :root[data-theme="dark"]{--bg:#14171c;--p:rgba(24,28,34,.9);--t:#e8ecf1;--m:#8b95a3;--a:#3ddc97;--b:rgba(255,255,255,.14);--c1:#1b1f26;--c2:#242933;color-scheme:dark}
 html,body{height:100%;margin:0}
 body{background:var(--bg);color:var(--t);font:13px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overflow:hidden}
-#v{position:fixed;inset:0;background:repeating-conic-gradient(var(--c1) 0 25%,var(--c2) 0 50%) 0 0/24px 24px}
+#v{position:fixed;inset:0 0 0 var(--pw);background:repeating-conic-gradient(var(--c1) 0 25%,var(--c2) 0 50%) 0 0/24px 24px}
 #v.flat{background:var(--bg)}
 canvas{display:block;width:100%;height:100%;touch-action:none}
-#pn{position:fixed;left:max(10px,env(safe-area-inset-left,0px));top:calc(10px + env(safe-area-inset-top,0px));width:320px;max-width:calc(100% - 20px);max-height:calc(100% - 20px);overflow:auto;background:var(--p);border:1px solid var(--b);border-radius:12px;padding:12px;backdrop-filter:blur(10px)}
+#pn{position:fixed;left:0;top:0;bottom:0;width:var(--pw);box-sizing:border-box;overflow:auto;background:var(--p);border-right:1px solid var(--b);padding:calc(12px + env(safe-area-inset-top,0px)) 12px 12px;z-index:2}
 h1{font-size:15px;margin:0 0 8px}
 button,select{font:inherit;color:var(--t);background:transparent;border:1px solid var(--b);border-radius:8px;padding:6px 9px}
 button{cursor:pointer}button.pr{background:var(--a);color:#fff;border-color:var(--a);font-weight:600}
 .r{display:flex;gap:6px;align-items:center;margin:6px 0}.r label{flex:0 0 100px;color:var(--m)}.r select,.r input[type=range]{flex:1;min-width:0}.r output{flex:0 0 38px;text-align:right;color:var(--m);font-size:11px}input[type=color]{padding:0;width:34px;height:26px;border:1px solid var(--b);border-radius:6px;background:none}.bgb{width:34px;height:26px;padding:0;border-radius:6px}.bgb.on{outline:2px solid var(--a)}
-#dm{position:fixed;inset:0;width:100%;height:100%;pointer-events:none}
+#dm{position:fixed;top:0;bottom:0;right:0;left:var(--pw);width:calc(100% - var(--pw));height:100%;pointer-events:none}
 #gd{position:fixed;display:none;pointer-events:none;border:1px dashed rgba(255,255,255,.85);box-shadow:0 0 0 100vmax rgba(0,0,0,.4)}
 details{margin:8px 0;border-top:1px solid var(--b);padding-top:6px}summary{cursor:pointer;font-weight:600}
 #st{color:var(--m);margin:8px 0;min-height:18px}
@@ -24,9 +24,11 @@ details{margin:8px 0;border-top:1px solid var(--b);padding-top:6px}summary{curso
 #dz{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(11,138,90,.28);border:3px dashed var(--a);font-size:22px;font-weight:600;z-index:9;pointer-events:none}
 #ov{position:fixed;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:rgba(0,0,0,.75);z-index:10;padding:20px;color:#fff}
 #ov img{max-width:90%;max-height:75%;background:repeating-conic-gradient(#888 0 25%,#bbb 0 50%) 0 0/16px 16px}
-.hint{position:fixed;bottom:calc(10px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);color:var(--m);font-size:12px;pointer-events:none;text-align:center;width:100%}
+.hint{position:fixed;bottom:calc(10px + env(safe-area-inset-bottom,0px));left:calc(50% + var(--pw)/2);transform:translateX(-50%);color:var(--m);font-size:12px;pointer-events:none;text-align:center;width:calc(100% - var(--pw))}
+#tp{position:fixed;top:calc(10px + env(safe-area-inset-top,0px));left:calc(var(--pw) + 10px);z-index:3;width:34px;height:34px;padding:0;background:var(--p)}
+#ts{position:fixed;bottom:60px;left:calc(50% + var(--pw)/2);transform:translateX(-50%);background:var(--p);border:1px solid var(--b);padding:8px 14px;border-radius:20px;display:none;z-index:11;max-width:80%;text-align:center}
 </style></head><body>
-<div id="v"></div><canvas id="dm"></canvas><div id="gd"></div><div id="dz">Pusť ZIP s Gerber súbormi</div>
+<div id="v"></div><canvas id="dm"></canvas><div id="gd"></div><button id="tp" title="Panel">☰</button><div id="ts"></div><div id="dz">Pusť ZIP s Gerber súbormi</div>
 <div id="pn">
 <div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><h1>Gerber 3D prehliadač</h1><select id="lg"><option value="sk">SK</option><option value="en">EN</option></select></div>
 <button class="pr" id="op" style="width:100%">Otvoriť ZIP s Gerbermi…</button>
@@ -49,6 +51,7 @@ details{margin:8px 0;border-top:1px solid var(--b);padding-top:6px}summary{curso
 <div class="r"><label>Veľkosť</label><select id="es"><option value="1024">1024 px</option><option value="2048" selected>2048 px</option><option value="4096">4096 px</option><option value="8192">8192 px</option></select></div>
 <div class="r"><label>Formát</label><select id="ef"><option value="png">PNG (priesvitné)</option><option value="pngbg">PNG (s pozadím)</option><option value="jpg">JPG (s pozadím)</option></select></div>
 <div class="r"><button class="pr" id="ex" style="flex:1" disabled>Uložiť obrázok</button></div>
+<div class="r"><button id="cp" style="flex:1" disabled>Kopírovať do schránky</button></div>
 <div class="r"><button id="sl" style="flex:1" disabled>Uložiť siluetu (maska výrezov)</button></div></details>
 <details><summary>Nastavenia</summary><div class="r"><button id="sv" style="flex:1">Uložiť nastavenia</button><button id="ld" style="flex:1">Načítať…</button></div><div class="r"><button id="rs" style="flex:1">Obnoviť predvolené</button></div><input type="file" id="sf" accept=".json,application/json" hidden></details>
 <div style="color:var(--m);font-size:11px">PNG má alfa kanál: výrezy, diery aj pozadie sú priesvitné (tieň polopriesvitný). V pohľade Zhora/Zospodu je export orezaný presne na dosku.</div>
@@ -177,13 +180,13 @@ const rfl=new THREE.Group();rfl.visible=false;scene.add(rfl);const RU={zp:{value
 const barMat=new THREE.MeshStandardMaterial({metalness:1,roughness:.35,side:THREE.DoubleSide});
 let rfm=[],cLoops=[],HL=[],ctcKey='';
 let root=null,sides={},bw=100,bh=80,view='p',th=-Math.PI/2,ph=.95,dist=150,zm=1,hhv=50,dirty=true;const tg=new THREE.Vector3();
-function upd(){const asp=innerWidth/innerHeight;applyFlip();
+function upd(){const asp=VW()/VH();applyFlip();
  if(view=='p'){pc.aspect=asp;pc.up.set(0,0,1);pc.position.set(tg.x+dist*Math.sin(ph)*Math.cos(th),tg.y+dist*Math.sin(ph)*Math.sin(th),tg.z+dist*Math.cos(ph));pc.lookAt(tg);pc.updateProjectionMatrix();pc.updateMatrixWorld()}
  else{hhv=Math.max(bh/2,bw/2/asp)*1.06;oc.left=-hhv*asp;oc.right=hhv*asp;oc.top=hhv;oc.bottom=-hhv;oc.zoom=zm;oc.up.set(0,1,0);oc.position.set(tg.x,tg.y,100);oc.lookAt(tg.x,tg.y,0);oc.updateProjectionMatrix();oc.updateMatrixWorld()}}
 function frame(){requestAnimationFrame(frame);if(!dirty)return;dirty=false;upd();const c=view=='p'?pc:oc;setVis(c,false);
  if(+$('#df').value>0){try{const d=new THREE.Vector2();renderer.getDrawingBufferSize(d);postRender(c,d.x,d.y,1.5,null)}catch(e){console.error(e);renderer.render(scene,c)}}else renderer.render(scene,c);
  guideEl();dimsLive(c)}
-function resize(){renderer.setSize(innerWidth,innerHeight);dirty=true}addEventListener('resize',resize);resize();requestAnimationFrame(frame);
+function resize(){renderer.setSize(VW(),VH());dirty=true}addEventListener('resize',resize);resize();requestAnimationFrame(frame);
 function setView(v){view=v;tg.set(0,0,0);zm=1;dirty=true}
 $('#vw').onchange=e=>setView(e.target.value);
 /* ovládanie */
@@ -193,8 +196,8 @@ cv.onpointerup=cv.onpointercancel=e=>ptr.delete(e.pointerId);
 cv.onpointermove=e=>{const p=ptr.get(e.pointerId);if(!p)return;const dx=e.clientX-p[0],dy=e.clientY-p[1];
  if(ptr.size>=2){const o=[...ptr.values()].find(q=>q!==p),d0=Math.hypot(p[0]-o[0],p[1]-o[1]);p[0]=e.clientX;p[1]=e.clientY;const d1=Math.hypot(p[0]-o[0],p[1]-o[1]);if(d1>0){if(view=='p')dist=Math.max(5,dist*d0/d1);else zm=Math.max(.2,zm*d1/d0)}}
  else{p[0]=e.clientX;p[1]=e.clientY;
-  if(p[2]||view!='p'){if(view=='p'){const sc=2*dist*Math.tan(pc.fov*Math.PI/360)/innerHeight,m=pc.matrixWorld.elements;tg.x+=-m[0]*dx*sc+m[4]*dy*sc;tg.y+=-m[1]*dx*sc+m[5]*dy*sc;tg.z+=-m[2]*dx*sc+m[6]*dy*sc}
-   else{const sc=2*hhv/zm/innerHeight;tg.x+=-dx*sc;tg.y+=dy*sc}}
+  if(p[2]||view!='p'){if(view=='p'){const sc=2*dist*Math.tan(pc.fov*Math.PI/360)/VH(),m=pc.matrixWorld.elements;tg.x+=-m[0]*dx*sc+m[4]*dy*sc;tg.y+=-m[1]*dx*sc+m[5]*dy*sc;tg.z+=-m[2]*dx*sc+m[6]*dy*sc}
+   else{const sc=2*hhv/zm/VH();tg.x+=-dx*sc;tg.y+=dy*sc}}
   else{th-=dx*.006;ph=Math.min(Math.PI-.04,Math.max(.04,ph-dy*.006))}}
  dirty=true};
 cv.onwheel=e=>{e.preventDefault();const k=Math.exp(e.deltaY*.0012);if(view=='p')dist=Math.max(5,dist*k);else zm=Math.max(.2,zm/k);dirty=true};
@@ -237,9 +240,9 @@ let bgm='t';const bgHex=()=>({k:'#000000',w:'#ffffff',c:$('#jc').value,t:'#fffff
 function setBg(m){bgm=m;host.style.background=m=='t'?'':bgHex();document.querySelectorAll('[data-bg]').forEach(b=>b.classList.toggle('on',b.dataset.bg==m));dirty=true}
 document.querySelectorAll('[data-bg]').forEach(b=>b.onclick=()=>setBg(b.dataset.bg));$('#jc').oninput=()=>setBg('c');
 document.querySelectorAll('#pn select,#pn input').forEach(e=>{e.addEventListener('input',()=>dirty=true);e.addEventListener('change',()=>dirty=true)});
-function guide(){const r=AR[$('#ar').value],iw=innerWidth,ih=innerHeight;if(!r)return{x:0,y:0,w:iw,h:ih};let w=iw*.94,h=w/r;if(h>ih*.94){h=ih*.94;w=h*r}return{x:(iw-w)/2,y:(ih-h)/2,w,h}}
-function guideEl(){const e=$('#gd'),on=!!AR[$('#ar').value];e.style.display=on?'block':'none';if(on){const g=guide();e.style.left=g.x+'px';e.style.top=g.y+'px';e.style.width=g.w+'px';e.style.height=g.h+'px'}}
-$('#fit').onclick=()=>{const g=guide(),m=1+ +$('#am').value/100,ih=innerHeight;tg.set(0,0,0);
+function guide(){const r=AR[$('#ar').value],iw=VW(),ih=VH();if(!r)return{x:0,y:0,w:iw,h:ih};let w=iw*.94,h=w/r;if(h>ih*.94){h=ih*.94;w=h*r}return{x:(iw-w)/2,y:(ih-h)/2,w,h}}
+function guideEl(){const e=$('#gd'),on=!!AR[$('#ar').value];e.style.display=on?'block':'none';if(on){const g=guide();e.style.left=(g.x+host.getBoundingClientRect().left)+'px';e.style.top=g.y+'px';e.style.width=g.w+'px';e.style.height=g.h+'px'}}
+$('#fit').onclick=()=>{const g=guide(),m=1+ +$('#am').value/100,ih=VH();tg.set(0,0,0);
  if(view=='p'){dist=Math.hypot(bw,bh)/2*m/(Math.tan(pc.fov*Math.PI/360)*Math.min(g.h,g.w)/ih)}
  else{zm=hhv*(g.h/ih)/(Math.max(bh/2,bw/2/(g.w/g.h))*m)}dirty=true};
 const PRE={sb:{sd:'1',ki:.25,le:70,la:250,ei:1,xp:.95,sr:14,so:.35,sg:1.5,cl:.1,fl:.2,cs:.5,cr:3,rk:.15,rl:25,df:0,bg:'w'},
@@ -247,6 +250,11 @@ mk:{sd:'1',ki:.6,le:40,la:220,ei:.5,xp:.85,sr:2,so:.6,sg:1.5,cl:.15,fl:.1,cs:.4,
 dr:{sd:'1',ki:.7,le:20,la:200,ei:.3,xp:.8,sr:6,so:.7,sg:1.5,cl:.2,fl:.05,cs:.6,cr:2,rk:.3,rl:20,df:0,bg:'k'},
 kt:{sd:'0',ki:.15,le:85,la:240,ei:1.2,xp:1,sr:16,so:.25,sg:1,cl:.08,fl:.3,cs:.5,cr:3,rk:0,df:0,bg:'w'}};
 $('#pr').onchange=e=>{const Q=PRE[e.target.value];if(!Q)return;for(const[k,val]of Object.entries(Q)){if(k=='bg'){setBg(val);continue}const el=$('#'+k);if(el){el.value=val;const o=$('#o_'+k);if(o)o.textContent=val}}look();dirty=true};
+function VW(){return host.clientWidth||innerWidth}
+function VH(){return host.clientHeight||innerHeight}
+function toast(s){const e=$('#ts');e.textContent=s;e.style.display='block';clearTimeout(e._t);e._t=setTimeout(()=>e.style.display='none',3200)}
+function setPanel(on){document.documentElement.style.setProperty('--pw',on?'320px':'0px');$('#pn').style.display=on?'':'none';resize()}
+$('#tp').onclick=()=>setPanel($('#pn').style.display=='none');if(innerWidth<760)setPanel(false);
 /* ---------- otočenie dosky (svetlá ostávajú) ---------- */
 const isFlip=()=>view=='b'||$('#fp').value=='1';
 ctc.material.side=THREE.DoubleSide;
@@ -312,13 +320,13 @@ function drawDims(x,cam,W,H,rh){const mode=$('#kd').value;if(mode=='0'||!root)re
  const line=(a,b)=>{x.beginPath();x.moveTo(a[0],a[1]);x.lineTo(b[0],b[1]);x.stroke()};
  const head=(p,ux,uy)=>{const s=fs*.6;x.beginPath();x.moveTo(p[0],p[1]);x.lineTo(p[0]+ux*s-uy*s*.3,p[1]+uy*s+ux*s*.3);x.lineTo(p[0]+ux*s+uy*s*.3,p[1]+uy*s-ux*s*.3);x.closePath();x.fill()};
  const text=(s,p,ang)=>{x.save();x.translate(p[0],p[1]);if(ang!==undefined){if(ang>Math.PI/2)ang-=Math.PI;if(ang<-Math.PI/2)ang+=Math.PI;x.rotate(ang)}x.lineWidth=fs*.28;x.strokeStyle='rgba(0,0,0,.65)';x.strokeText(s,0,0);x.fillStyle=col;x.fillText(s,0,0);x.restore()};
- const dim=(a,b,s)=>{const dx=b[0]-a[0],dy=b[1]-a[1],l=Math.hypot(dx,dy)||1,ux=dx/l,uy=dy/l;line(a,b);head(a,ux,uy);head(b,-ux,-uy);text(s,[(a[0]+b[0])/2,(a[1]+b[1])/2],Math.atan2(dy,dx))};
+ const dim=(a,b,s)=>{const dx=b[0]-a[0],dy=b[1]-a[1],l=Math.hypot(dx,dy)||1,ux=dx/l,uy=dy/l,gp=(x.measureText(s).width+fs*.9)/2,m=[(a[0]+b[0])/2,(a[1]+b[1])/2];if(l>2*gp+fs*1.4){line(a,[m[0]-ux*gp,m[1]-uy*gp]);line([m[0]+ux*gp,m[1]+uy*gp],b)}else line(a,b);head(a,ux,uy);head(b,-ux,-uy);text(s,m,Math.atan2(dy,dx))};
  const hx=bw/2,hy=bh/2,off=Math.max(bw,bh)*.07,yy=-hy-off,xx=hx+off;
  line(Pj(-hx,-hy-off*.15),Pj(-hx,yy-off*.2));line(Pj(hx,-hy-off*.15),Pj(hx,yy-off*.2));dim(Pj(-hx,yy),Pj(hx,yy),fm(bw));
  line(Pj(hx+off*.15,-hy),Pj(xx+off*.2,-hy));line(Pj(hx+off*.15,hy),Pj(xx+off*.2,hy));dim(Pj(xx,-hy),Pj(xx,hy),fm(bh));
- if(mode=='2'){let n=0;for(const q of HL){if(q.p||q.d<1.6||n>=20)continue;n++;const c=Pj(q.x,q.y),o=[c[0]+fs*1.2,c[1]-fs*1.2];line(c,o);text('Ø'+(inch?(q.d/25.4).toFixed(3)+'"':q.d.toFixed(2)+' mm'),[o[0]+fs*2.4,o[1]])}}
+ if(mode=='2'){let n=0;for(const q of HL){if(q.p||q.d<1.6||n>=20)continue;n++;const c=Pj(q.x,q.y),o=[c[0]+fs*1.2,c[1]-fs*1.2];line(c,o);const hs='Ø'+(inch?(q.d/25.4).toFixed(3)+'"':q.d.toFixed(2)+' mm');text(hs,[o[0]+x.measureText(hs).width/2+fs*.4,o[1]])}}
  x.restore()}
-function dimsLive(c){const cn=$('#dm'),pr=Math.min(devicePixelRatio,2),w=innerWidth,hh=innerHeight;if(cn.width!=Math.round(w*pr)||cn.height!=Math.round(hh*pr)){cn.width=Math.round(w*pr);cn.height=Math.round(hh*pr)}
+function dimsLive(c){const cn=$('#dm'),pr=Math.min(devicePixelRatio,2),w=VW(),hh=VH();if(cn.width!=Math.round(w*pr)||cn.height!=Math.round(hh*pr)){cn.width=Math.round(w*pr);cn.height=Math.round(hh*pr)}
  const x=cn.getContext('2d');x.setTransform(1,0,0,1,0,0);x.clearRect(0,0,cn.width,cn.height);x.scale(pr,pr);drawDims(x,c,w,hh,guide().h)}
 /* ---------- uloženie / načítanie nastavení ---------- */
 function getSet(){const ui={};document.querySelectorAll('#pn select[id],#pn input[type=range],#pn input[type=color]').forEach(e=>ui[e.id]=e.value);return{v:1,ui,bgm,cam:{th,ph,dist,zm,tg:[tg.x,tg.y,tg.z]}}}
@@ -386,7 +394,7 @@ async function load(file){setSt(()=>t('Čítam ZIP…'));await tick();
   {const ops=(L.ol||L.tc||L.bc||{ops:[]}).ops;let a=1e9,b=1e9,c=-1e9,d=-1e9;for(const o of ops){const P=o.t=='f'?[[o.x,o.y]]:o.t=='l'?o.pts:o.c.flat();for(const p of P){a=Math.min(a,p[0]);c=Math.max(c,p[0]);b=Math.min(b,p[1]);d=Math.max(d,p[1])}}
    for(const t of dtx){let best=null;for(const dv of[0,3,4,5,6]){const r=parseDrill(t,dv),n=r.H.filter(h=>h[0]>=a-1&&h[0]<=c+1&&h[1]>=b-1&&h[1]<=d+1).length;if(!best||n>best.n)best={n,r}}dr.push(best.r)}}
   $('#ly').innerHTML=names.map(n=>'<span>'+n+'</span>').join('');setSt(()=>t('Spracúvam textúry…'));await tick();
-  last={L,dr};$('#ox').value=0;$('#oy').value=0;$('#o_ox').textContent=$('#o_oy').textContent=0;show(await build(L,dr));$('#ex').disabled=$('#sl').disabled=false}
+  last={L,dr};$('#ox').value=0;$('#oy').value=0;$('#o_ox').textContent=$('#o_oy').textContent=0;show(await build(L,dr));$('#ex').disabled=$('#sl').disabled=$('#cp').disabled=false}
  catch(err){setSt(()=>t('Chyba: ')+t(err.message));console.error(err)}}
 $('#op').onclick=()=>$('#fi').click();$('#fi').onchange=e=>e.target.files[0]&&load(e.target.files[0]);
 const dz=$('#dz');addEventListener('dragover',e=>{e.preventDefault();dz.style.display='flex'});addEventListener('dragleave',e=>{if(!e.relatedTarget)dz.style.display='none'});
@@ -397,26 +405,27 @@ async function save(blob,name){let dl=null;try{if(window.claude&&claude.use)dl=a
 if(!(window.claude&&claude.use)){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();a.remove();return}
  $('#oi').src=URL.createObjectURL(blob);$('#ov').style.display='flex'}
 $('#ov').onclick=()=>$('#ov').style.display='none';
-async function exportPNG(sil){if(!root)return;
+async function exportPNG(sil,copy){if(!root)return;let cw=null,cres;if(copy){const pm=new Promise(r=>cres=r);try{cw=navigator.clipboard.write([new ClipboardItem({'image/png':pm})])}catch(e){cw=Promise.reject(e)}}
  const long=Math.min(+$('#es').value,renderer.capabilities.maxTextureSize,8192),ar=AR[$('#ar').value],g=guide(),fmt=$('#ef').value,opq=!sil&&fmt!='png',jpg=!sil&&fmt=='jpg',bgc=bgHex();
  let cam,asp;
- if(view=='p'){cam=pc;asp=ar||innerWidth/innerHeight}
- else if(ar){asp=ar;const hh=hhv/zm*g.h/innerHeight;cam=new THREE.OrthographicCamera(-hh*asp,hh*asp,hh,-hh,1,300);cam.up.set(0,1,0);cam.position.set(tg.x,tg.y,100);cam.lookAt(tg.x,tg.y,0)}
+ if(view=='p'){cam=pc;asp=ar||VW()/VH()}
+ else if(ar){asp=ar;const hh=hhv/zm*g.h/VH();cam=new THREE.OrthographicCamera(-hh*asp,hh*asp,hh,-hh,1,300);cam.up.set(0,1,0);cam.position.set(tg.x,tg.y,100);cam.lookAt(tg.x,tg.y,0)}
  else{asp=bw/bh;cam=new THREE.OrthographicCamera(-bw/2,bw/2,bh/2,-bh/2,1,300);cam.up.set(0,1,0);cam.position.set(0,0,100);cam.lookAt(0,0,0)}
  const W=asp>=1?long:Math.round(long*asp),H=asp>=1?Math.round(long/asp):long,pr=renderer.getPixelRatio(),tm=renderer.toneMapping,of=pc.fov,oa=pc.aspect;
  renderer.setPixelRatio(1);renderer.setSize(W,H,false);
- if(view=='p'){pc.fov=2*Math.atan(Math.tan(of*Math.PI/360)*(ar?g.h/innerHeight:1))*180/Math.PI;pc.aspect=asp;pc.updateProjectionMatrix();pc.updateMatrixWorld()}
+ if(view=='p'){pc.fov=2*Math.atan(Math.tan(of*Math.PI/360)*(ar?g.h/VH():1))*180/Math.PI;pc.aspect=asp;pc.updateProjectionMatrix();pc.updateMatrixWorld()}
  cam.updateMatrixWorld();setVis(cam,sil);let ok=false;
  if(!sil){try{postRender(cam,W,H,Math.min(2,6144/long),opq?bgc:null);ok=true}catch(e){console.error(e)}}
  if(!ok){if(sil){scene.overrideMaterial=new THREE.MeshBasicMaterial({color:0xffffff});renderer.toneMapping=THREE.NoToneMapping}if(opq)renderer.setClearColor(bgc,1);renderer.render(scene,cam)}
  let src=renderer.domElement;
  if(!sil&&$('#kd').value!='0'){src=document.createElement('canvas');src.width=W;src.height=H;const x=src.getContext('2d');x.drawImage(renderer.domElement,0,0);drawDims(x,cam,W,H,H)}
- const blob=await new Promise(r=>src.toBlob(r,jpg?'image/jpeg':'image/png',.95));
- scene.overrideMaterial=null;renderer.setClearColor(0,0);renderer.toneMapping=tm;renderer.setPixelRatio(pr);renderer.setSize(innerWidth,innerHeight);pc.fov=of;pc.aspect=oa;pc.updateProjectionMatrix();dirty=true;
- await save(blob,(sil?'pcb-silueta-':'pcb-')+({p:'3d',t:'top',b:'bottom'})[view]+'-'+W+'x'+H+(jpg?'.jpg':'.png'))}
-$('#ex').onclick=()=>exportPNG(false);$('#sl').onclick=()=>exportPNG(true);
+ const blob=await new Promise(r=>src.toBlob(r,jpg&&!copy?'image/jpeg':'image/png',.95));
+ scene.overrideMaterial=null;renderer.setClearColor(0,0);renderer.toneMapping=tm;renderer.setPixelRatio(pr);renderer.setSize(VW(),VH());pc.fov=of;pc.aspect=oa;pc.updateProjectionMatrix();dirty=true;
+ if(copy){cres(blob);try{await cw;toast(t('Obrázok skopírovaný do schránky.'))}catch(e){console.error(e);$('#oi').src=URL.createObjectURL(blob);$('#ov').style.display='flex';toast(t('Schránka nie je dostupná – obrázok je v náhľade, skopíruj ho pravým tlačidlom.'))}}
+ else await save(blob,(sil?'pcb-silueta-':'pcb-')+({p:'3d',t:'top',b:'bottom'})[view]+'-'+W+'x'+H+(jpg?'.jpg':'.png'))}
+$('#ex').onclick=()=>exportPNG(false);$('#cp').onclick=()=>exportPNG(false,true);$('#sl').onclick=()=>exportPNG(true);
 /* ---------- jazyk SK / EN ---------- */
-const EN={'Strana dosky':'Board side','Horná':'Top','Dolná (otočená)':'Bottom (flipped)','Štúdio':'Studio','Vlastné':'Custom','Makro (tvrdé svetlo)':'Macro (hard light)','Dramatické':'Dramatic','Katalóg (plochý)':'Catalog (flat)','Detaily dosky':'Board details','Pokovené diery':'Plated holes','Valce v dierach':'Barrels in holes','Bez valcov':'No barrels','Tieň a odraz':'Shadow & reflection','Tieň od svetla':'Light shadow','Kóty (rozmery)':'Dimensions','Kóty':'Dimensions','Vypnuté':'Off','Rozmery dosky':'Board size','Rozmery + montážne otvory':'Size + mounting holes','Jednotky':'Units','palce':'inches','Farba kót':'Dimension color','Priesvitné':'Transparent','Čierne':'Black','Biele':'White','Farebné pozadie':'Color background','Pomer strán':'Aspect ratio','Okno (voľné)':'Window (free)','Zarámovať dosku':'Frame the board','Veľkosť':'Size','PNG (s pozadím)':'PNG (with background)','Nastavenia':'Settings','Uložiť nastavenia':'Save settings','Načítať…':'Load…','Obnoviť predvolené':'Reset to defaults','Doplnkové svetlo':'Fill light','Hĺbka ostrosti':'Depth of field','Kontaktný tieň':'Contact shadow','Odraz':'Reflection','Dosah odrazu':'Reflection reach','Rozmazanie kontaktu':'Contact blur','Zrnitosť materiálu':'Material grain','Veľkosť písma':'Font size','Okraj dosky %':'Board margin %','Gerber 3D prehliadač':'Gerber 3D viewer','Otvoriť ZIP s Gerbermi…':'Open Gerber ZIP…','Pusť ZIP kamkoľvek do okna.':'Drop a ZIP anywhere in the window.','Pusť ZIP s Gerber súbormi':'Drop a ZIP with Gerber files','Pohľad':'View','3D perspektíva':'3D perspective','Zhora (ortho)':'Top (ortho)','Zospodu (ortho)':'Bottom (ortho)','Maska':'Mask','Povrch':'Finish','ENIG zlato':'ENIG gold','HASL cín':'HASL tin','Vŕtanie – zarovnanie':'Drills – alignment','Zarovnanie':'Alignment','Bez auto-zarovnania':'No auto-alignment','Svetlo a render':'Light & render','Farby masky a medi':'Mask & copper colors','Tieň':'Shadow','Vypnutý':'Off','Zapnutý':'On','Pozadie':'Background','Šachovnica':'Checkerboard','Jednofarebné':'Solid color','Formát':'Format','PNG (priesvitné)':'PNG (transparent)','JPG (s pozadím)':'JPG (with background)','Uložiť obrázok':'Save image','Uložiť siluetu (maska výrezov)':'Save silhouette (cutout mask)','PNG má alfa kanál: výrezy, diery aj pozadie sú priesvitné (tieň polopriesvitný). V pohľade Zhora/Zospodu je export orezaný presne na dosku.':'PNG has an alpha channel: cutouts, holes and background are transparent (shadow is semi-transparent). In Top/Bottom view the export is cropped exactly to the board.','ťahanie = otáčanie · Shift/pravé tlačidlo = posun · koliesko = zoom':'drag = rotate · Shift/right button = pan · wheel = zoom','Uloženie nie je dostupné – klikni pravým tlačidlom na obrázok → Uložiť obrázok.':'Saving is not available – right-click the image → Save image.','Klik mimo = zavrieť.':'Click outside to close.','Zelená':'Green','Modrá':'Blue','Čierna':'Black','Červená':'Red','Biela':'White','Žltá':'Yellow','Fialová':'Purple','Vlastná':'Custom','Vlastná farba masky':'Custom mask color','Pozadie pre JPG':'Background for JPG','Posun X mm':'Offset X mm','Posun Y mm':'Offset Y mm','Expozícia':'Exposure','Jas farieb':'Color brightness','Okolité svetlo':'Ambient light','Kľúčové svetlo':'Key light','Smer svetla °':'Light direction °','Výška svetla °':'Light elevation °','Lesk masky':'Mask gloss','Drsnosť ×':'Roughness ×','Reliéf':'Relief','Jas masky':'Mask brightness','Presvit medi':'Copper show-through','Sýtosť masky':'Mask saturation','Odstup podložky':'Ground gap','Sila tieňa':'Shadow strength','Rozmazanie':'Blur','meď hore':'top copper','meď dole':'bottom copper','maska hore':'top mask','maska dole':'bottom mask','silk hore':'top silk','silk dole':'bottom silk','obrys':'outline','vŕtanie':'drill','Doska ':'Board ','výrezov: ':'cutouts: ','otvorov: ':'holes: ','vŕtanie zarovnané (':'drills aligned (','zrkadlo X, ':'mirror X, ','zrkadlo Y, ':'mirror Y, ','posun ':'offset ','Čítam ZIP…':'Reading ZIP…','Spracúvam textúry…':'Processing textures…','Prepočítavam…':'Recalculating…','Chyba: ':'Error: ','Nenašiel som obrys ani meď.':'No outline or copper found.','V ZIP som nenašiel žiadne Gerber súbory.':'No Gerber files found in the ZIP.'};
+const EN={'Kopírovať do schránky':'Copy to clipboard','Obrázok skopírovaný do schránky.':'Image copied to clipboard.','Schránka nie je dostupná – obrázok je v náhľade, skopíruj ho pravým tlačidlom.':'Clipboard not available – image shown in preview, right-click to copy it.','Strana dosky':'Board side','Horná':'Top','Dolná (otočená)':'Bottom (flipped)','Štúdio':'Studio','Vlastné':'Custom','Makro (tvrdé svetlo)':'Macro (hard light)','Dramatické':'Dramatic','Katalóg (plochý)':'Catalog (flat)','Detaily dosky':'Board details','Pokovené diery':'Plated holes','Valce v dierach':'Barrels in holes','Bez valcov':'No barrels','Tieň a odraz':'Shadow & reflection','Tieň od svetla':'Light shadow','Kóty (rozmery)':'Dimensions','Kóty':'Dimensions','Vypnuté':'Off','Rozmery dosky':'Board size','Rozmery + montážne otvory':'Size + mounting holes','Jednotky':'Units','palce':'inches','Farba kót':'Dimension color','Priesvitné':'Transparent','Čierne':'Black','Biele':'White','Farebné pozadie':'Color background','Pomer strán':'Aspect ratio','Okno (voľné)':'Window (free)','Zarámovať dosku':'Frame the board','Veľkosť':'Size','PNG (s pozadím)':'PNG (with background)','Nastavenia':'Settings','Uložiť nastavenia':'Save settings','Načítať…':'Load…','Obnoviť predvolené':'Reset to defaults','Doplnkové svetlo':'Fill light','Hĺbka ostrosti':'Depth of field','Kontaktný tieň':'Contact shadow','Odraz':'Reflection','Dosah odrazu':'Reflection reach','Rozmazanie kontaktu':'Contact blur','Zrnitosť materiálu':'Material grain','Veľkosť písma':'Font size','Okraj dosky %':'Board margin %','Gerber 3D prehliadač':'Gerber 3D viewer','Otvoriť ZIP s Gerbermi…':'Open Gerber ZIP…','Pusť ZIP kamkoľvek do okna.':'Drop a ZIP anywhere in the window.','Pusť ZIP s Gerber súbormi':'Drop a ZIP with Gerber files','Pohľad':'View','3D perspektíva':'3D perspective','Zhora (ortho)':'Top (ortho)','Zospodu (ortho)':'Bottom (ortho)','Maska':'Mask','Povrch':'Finish','ENIG zlato':'ENIG gold','HASL cín':'HASL tin','Vŕtanie – zarovnanie':'Drills – alignment','Zarovnanie':'Alignment','Bez auto-zarovnania':'No auto-alignment','Svetlo a render':'Light & render','Farby masky a medi':'Mask & copper colors','Tieň':'Shadow','Vypnutý':'Off','Zapnutý':'On','Pozadie':'Background','Šachovnica':'Checkerboard','Jednofarebné':'Solid color','Formát':'Format','PNG (priesvitné)':'PNG (transparent)','JPG (s pozadím)':'JPG (with background)','Uložiť obrázok':'Save image','Uložiť siluetu (maska výrezov)':'Save silhouette (cutout mask)','PNG má alfa kanál: výrezy, diery aj pozadie sú priesvitné (tieň polopriesvitný). V pohľade Zhora/Zospodu je export orezaný presne na dosku.':'PNG has an alpha channel: cutouts, holes and background are transparent (shadow is semi-transparent). In Top/Bottom view the export is cropped exactly to the board.','ťahanie = otáčanie · Shift/pravé tlačidlo = posun · koliesko = zoom':'drag = rotate · Shift/right button = pan · wheel = zoom','Uloženie nie je dostupné – klikni pravým tlačidlom na obrázok → Uložiť obrázok.':'Saving is not available – right-click the image → Save image.','Klik mimo = zavrieť.':'Click outside to close.','Zelená':'Green','Modrá':'Blue','Čierna':'Black','Červená':'Red','Biela':'White','Žltá':'Yellow','Fialová':'Purple','Vlastná':'Custom','Vlastná farba masky':'Custom mask color','Pozadie pre JPG':'Background for JPG','Posun X mm':'Offset X mm','Posun Y mm':'Offset Y mm','Expozícia':'Exposure','Jas farieb':'Color brightness','Okolité svetlo':'Ambient light','Kľúčové svetlo':'Key light','Smer svetla °':'Light direction °','Výška svetla °':'Light elevation °','Lesk masky':'Mask gloss','Drsnosť ×':'Roughness ×','Reliéf':'Relief','Jas masky':'Mask brightness','Presvit medi':'Copper show-through','Sýtosť masky':'Mask saturation','Odstup podložky':'Ground gap','Sila tieňa':'Shadow strength','Rozmazanie':'Blur','meď hore':'top copper','meď dole':'bottom copper','maska hore':'top mask','maska dole':'bottom mask','silk hore':'top silk','silk dole':'bottom silk','obrys':'outline','vŕtanie':'drill','Doska ':'Board ','výrezov: ':'cutouts: ','otvorov: ':'holes: ','vŕtanie zarovnané (':'drills aligned (','zrkadlo X, ':'mirror X, ','zrkadlo Y, ':'mirror Y, ','posun ':'offset ','Čítam ZIP…':'Reading ZIP…','Spracúvam textúry…':'Processing textures…','Prepočítavam…':'Recalculating…','Chyba: ':'Error: ','Nenašiel som obrys ani meď.':'No outline or copper found.','V ZIP som nenašiel žiadne Gerber súbory.':'No Gerber files found in the ZIP.'};
 let LG=(()=>{try{const s=localStorage.getItem('lg');if(s)return s}catch(e){}return /^(sk|cs)/i.test(navigator.language)?'sk':'en'})();
 const t=s=>LG=='en'&&EN[s]||s;let stFn=()=>t('Pusť ZIP kamkoľvek do okna.');
 function setSt(f){stFn=f;applyLang()}
